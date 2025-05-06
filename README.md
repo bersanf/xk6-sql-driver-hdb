@@ -2,6 +2,24 @@
 
 Database driver extension for [xk6-sql](https://github.com/grafana/xk6-sql) k6 extension to support SAP HANA database.
 
+## Installation
+
+Docker setup example to build xk6 with SAP HANA driver
+
+```Docker file=Dockerfile
+# syntax=docker/dockerfile:1
+
+FROM grafana/xk6:latest AS build
+RUN go env -w GOPROXY=direct
+RUN env GOOS=linux GOARCH=arm64
+
+RUN env GOOS=linux GOARCH=arm64 xk6 build v1.0.0-rc1 \
+    --with github.com/LeonAdato/xk6-output-statsd@latest \
+    --with github.com/grafana/xk6-sql@latest \
+    --with github.com/bersanf/xk6-sql-driver-hdb@latest
+```
+
+
 ## Example
 
 ```JavaScript file=examples/example.js
