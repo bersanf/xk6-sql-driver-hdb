@@ -4,20 +4,62 @@ Database driver extension for [xk6-sql](https://github.com/grafana/xk6-sql) k6 e
 
 ## Installation
 
+### Docker 
 Docker setup example to build xk6 with SAP HANA driver
 
 ```Docker file=Dockerfile
 # syntax=docker/dockerfile:1
 
+### Step 1: Build the k6 executable with the required extensions
 FROM grafana/xk6:latest AS build
 RUN go env -w GOPROXY=direct
-RUN env GOOS=linux GOARCH=arm64
+RUN env GOOS=linux GOARCH=arm64 #change your target architecture (eg: amd64 or arm64)
 
 RUN env GOOS=linux GOARCH=arm64 xk6 build v1.0.0-rc1 \
     --with github.com/LeonAdato/xk6-output-statsd@latest \
     --with github.com/grafana/xk6-sql@latest \
     --with github.com/bersanf/xk6-sql-driver-hdb@latest
+
+### Step 2: Create the image to run k6 load tests (this is an example)
+FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+
+#copy the executable from previous step
+COPY --from=build /xk6/k6 /usr/bin/k6
+
+COPY your-entrypoint.sh /k6/your-entrypoint.sh
+
+USER k6
+WORKDIR /k6
+
+# Set the entrypoint to k6
+ENTRYPOINT ["/k6/your-entrypoint.sh"]
+
+```bash file=k6-setup.sh
+#!/usr/bin/env bash
+set -e
+
+## install required software packages to build
+sudo yum install golang tar -y
+go env -w GOPROXY=direct
+env GOOS=linux GOARCH=arm64 #change your target architecture (eg: amd64 or arm64)
+
+## install xk6
+go install go.k6.io/xk6/cmd/xk6@latest
+
+sudo mv go/bin/xk6 /usr/local/bin/xk6
+
+## build the k6 executable with required extensions
+env GOOS=linux GOARCH=arm64 xk6 build v1.0.0 \
+    --with github.com/grafana/xk6-sql@latest \
+    --with github.com/bersanf/xk6-sql-driver-hdb@latest
+
+sudo mv ./k6 /usr/local/bin/k6
 ```
+
+### Virtual Machine (Amazon EC2 example)
+```
+
+
 
 
 ## Example
