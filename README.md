@@ -7,7 +7,7 @@ Database driver extension for [xk6-sql](https://github.com/grafana/xk6-sql) k6 e
 ### Docker 
 Docker setup example to build xk6 with SAP HANA driver
 
-```Docker file=Dockerfile
+```Dockerfile file=Dockerfile
 # syntax=docker/dockerfile:1
 
 ### Step 1: Build the k6 executable with the required extensions
@@ -34,6 +34,10 @@ WORKDIR /k6
 # Set the entrypoint to k6
 ENTRYPOINT ["/k6/your-entrypoint.sh"]
 
+```
+
+
+### Virtual Machine (Amazon EC2 example)
 ```bash file=k6-setup.sh
 #!/usr/bin/env bash
 set -e
@@ -54,9 +58,6 @@ env GOOS=linux GOARCH=arm64 xk6 build v1.0.0 \
     --with github.com/bersanf/xk6-sql-driver-hdb@latest
 
 sudo mv ./k6 /usr/local/bin/k6
-```
-
-### Virtual Machine (Amazon EC2 example)
 ```
 
 
