@@ -1,4 +1,4 @@
-// Package ramsql contains SAP HANA driver registration for xk6-sql.
+// Package hdb contains SAP HANA driver registration for xk6-sql.
 package hdb
 
 import (
