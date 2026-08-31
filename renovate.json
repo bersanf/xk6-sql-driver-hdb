@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "postUpdateOptions": ["gomodTidy"],
+  "packageRules": [
+    {
+      "description": "Group the xk6-sql extension and the k6 core it pulls in.",
+      "matchPackageNames": ["github.com/grafana/xk6-sql", "go.k6.io/k6{/,}**"],
+      "groupName": "xk6-sql and k6"
+    },
+    {
+      "description": "Keep GitHub Actions pinned to commit SHAs.",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    }
+  ]
+}
