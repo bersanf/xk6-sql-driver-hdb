@@ -22,14 +22,14 @@ FROM grafana/xk6:latest AS build
 
 # Change to your target architecture (eg. amd64 or arm64).
 ARG TARGETOS=linux
-ARG TARGETARCH=arm64
+ARG TARGETARCH=amd64
 ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
 
 RUN xk6 build v2.2.0 \
     --with github.com/LeonAdato/xk6-output-statsd@latest \
-    --with github.com/grafana/xk6-sql@latest \
-    --with github.com/bersanf/xk6-sql-driver-hdb@latest
+    --with github.com/grafana/xk6-sql@v1.2.2 \
+    --with github.com/bersanf/xk6-sql-driver-hdb@v1.0.0
 
 ### Step 2: Create the image to run k6 load tests (this is an example)
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023
@@ -57,27 +57,21 @@ ENTRYPOINT ["/k6/your-entrypoint.sh"]
 #!/usr/bin/env bash
 set -euo pipefail
 
-GO_VERSION=1.25.14
 # Change to your target architecture (eg. amd64 or arm64).
 export GOOS=linux
 export GOARCH=arm64
 
-## install required software packages to build
-sudo yum install -y tar gzip
+sudo yum install golang tar -y
 
-## the yum "golang" package is usually too old, install a current Go toolchain
-curl -fsSLO "https://go.dev/dl/go${GO_VERSION}.${GOOS}-${GOARCH}.tar.gz"
-sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf "go${GO_VERSION}.${GOOS}-${GOARCH}.tar.gz"
-export PATH="/usr/local/go/bin:${HOME}/go/bin:${PATH}"
+go env -w GOPROXY=https://proxy.golang.org,direct
 
 ## install xk6
-go install go.k6.io/xk6/cmd/xk6@latest
+go install go.k6.io/xk6/cmd/xk6@v1.4.12
 
 ## build the k6 executable with required extensions
-xk6 build v2.2.0 \
-    --with github.com/grafana/xk6-sql@latest \
-    --with github.com/bersanf/xk6-sql-driver-hdb@latest
+env GOOS=$GOOS GOARCH=$GOARCH xk6 build v2.2.0 \
+    --with github.com/grafana/xk6-sql@v1.2.2 \
+    --with github.com/bersanf/xk6-sql-driver-hdb@v1.0.0
 
 sudo mv ./k6 /usr/local/bin/k6
 ```
@@ -88,11 +82,11 @@ sudo mv ./k6 /usr/local/bin/k6
 import sql from "k6/x/sql";
 import driver from "k6/x/sql/driver/hdb";
 
-// Pass the connection string with: k6 run -e K6_SQL_HDB_DSN=hdb://... examples/example.js
-const db = sql.open(
-  driver,
-  __ENV.K6_SQL_HDB_DSN || "hdb://HANA_USER:HANA_PASSWORD@HANA_HOST:30015",
-);
+//// for HANA 2.0
+const db = sql.open(driver, "hdb://HANA_USER:HANA_PASSWORD@HANA_HOST:30015");
+
+//// for HANA Cloud
+//const db = sql.open(driver, ""hdb://<USER>:<PASSWORD>@something.hanacloud.ondemand.com:443?TLSServerName=something.hanacloud.ondemand.com");
 
 export function setup() {
   db.exec(`
